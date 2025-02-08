@@ -1,31 +1,17 @@
-import { Hono } from "hono";
 import { sign } from "hono/jwt";
 import bcrypt from "bcryptjs";
 import { authMiddleware } from "../middleware/authMiddleware";
-import { getPrisma } from "../../prisma/Prisma-Connection";
+import { getPrisma } from "../db/db_conection";
+import app from "../app"
 
-type Env = {
-  DATABASE_URL: string;
-  JWT_SECRET: string;
-}; 
 
-// Define the Hono app with custom variables
-const app = new Hono<{
-  Variables: {
-    prisma: ReturnType<typeof getPrisma>;
-    user: any; // Define the type for `user` if possible
-  };
-  Bindings: Env; // Add the `Env` type here
-}>();
-
-// Middleware to attach Prisma to the context
 app.use('*', async (c, next) => {
-  const prisma = getPrisma(c);
+  const prisma = getPrisma(c.env.DATABASE_URL);
   c.set('prisma', prisma);
   await next();
 });
 
-// 🔹 SIGNUP Endpoint
+// SIGNUP Endpoint
 app.post("/signup", async (c) => {
   const { username, email, password } = await c.req.json();
   const prisma = c.get('prisma');
@@ -55,7 +41,7 @@ app.post("/signin", async (c) => {
   if (!isValid) return c.json({ error: "Invalid credentials" }, 401);
 
   // Generate JWT token
-  const token = await sign({ id: user.id, email: user.email }, c.env.JWT_SECRET);
+  const token = await sign({ id: user.id, email: user.email, username: user.username }, c.env.JWT_SECRET);
 
   return c.json({ token });
 });
