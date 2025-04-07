@@ -1,47 +1,33 @@
-/**
- * For more details on how to configure Wrangler, refer to:
- * https://developers.cloudflare.com/workers/wrangler/configuration/
- */
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "backend",
   "main": "src/index.ts",
   "compatibility_date": "2025-02-04",
+  
+  "vars": {
+    "DATABASE_URL": "prisma://accelerate.prisma-data.net/?api_key=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhcGlfa2V5IjoiYjMzMjkyNWMtNjRmMy00MWU2LWFmNWItMDNiN2JiOTBjZjUwIiwidGVuYW50X2lkIjoiYTFiNGNkODg0ZWFlMGM3ZjhjNzhlNDA3NDBjY2EwYWNmNWEwMWRhZmM5OGI4MGEwMmY1NTlkNjA5NzVkNjM3ZiIsImludGVybmFsX3NlY3JldCI6IjNmYjAwNWMzLTMwZDMtNGNlOS04YWUzLTk0NWFkZTlkYTQyMCJ9.xkBfUvwZN1F70T6f2ZfSiXnrCykl1ZBBsdzmuFWzmEg",
+    "DIRECT_DATABASE_URL": "postgresql://neondb_owner:npg_tT9GibXH6YJR@ep-morning-wind-a17iz1ct-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require",
+    "JWT_SECRET": "jblivyttqzpyn36cghbnno67843$^*@$dvmalnmfE%##&#edgavzvxz"
+  },
+  
   "observability": {
     "enabled": true
+  },
+  
+  "env": {
+    "production": {
+      "vars": {
+        "DATABASE_URL": "prisma://accelerate.prisma-data.net/?api_key=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhcGlfa2V5IjoiYjMzMjkyNWMtNjRmMy00MWU2LWFmNWItMDNiN2JiOTBjZjUwIiwidGVuYW50X2lkIjoiYTFiNGNkODg0ZWFlMGM3ZjhjNzhlNDA3NDBjY2EwYWNmNWEwMWRhZmM5OGI4MGEwMmY1NTlkNjA5NzVkNjM3ZiIsImludGVybmFsX3NlY3JldCI6IjNmYjAwNWMzLTMwZDMtNGNlOS04YWUzLTk0NWFkZTlkYTQyMCJ9.xkBfUvwZN1F70T6f2ZfSiXnrCykl1ZBBsdzmuFWzmEg",
+        "DIRECT_DATABASE_URL": "postgresql://neondb_owner:npg_tT9GibXH6YJR@ep-morning-wind-a17iz1ct-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require",
+        "JWT_SECRET": "jblivyttqzpyn36cghbnno67843$^*@$dvmalnmfE%##&#edgavzvxz"
+      }
+    },
+    "staging": {
+      "vars": {
+        "DATABASE_URL": "prisma://accelerate.prisma-data.net/?api_key=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhcGlfa2V5IjoiYjMzMjkyNWMtNjRmMy00MWU2LWFmNWItMDNiN2JiOTBjZjUwIiwidGVuYW50X2lkIjoiYTFiNGNkODg0ZWFlMGM3ZjhjNzhlNDA3NDBjY2EwYWNmNWEwMWRhZmM5OGI4MGEwMmY1NTlkNjA5NzVkNjM3ZiIsImludGVybmFsX3NlY3JldCI6IjNmYjAwNWMzLTMwZDMtNGNlOS04YWUzLTk0NWFkZTlkYTQyMCJ9.xkBfUvwZN1F70T6f2ZfSiXnrCykl1ZBBsdzmuFWzmEg",
+        "DIRECT_DATABASE_URL": "postgresql://neondb_owner:npg_tT9GibXH6YJR@ep-morning-wind-a17iz1ct-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require",
+        "JWT_SECRET": "jblivyttqzpyn36cghbnno67843$^*@$dvmalnmfE%##&#edgavzvxz"
+      }
+    }
   }
-  /**
-   * Smart Placement
-   * Docs: https://developers.cloudflare.com/workers/configuration/smart-placement/#smart-placement
-   */
-  // "placement": { "mode": "smart" },
-
-  /**
-   * Bindings
-   * Bindings allow your Worker to interact with resources on the Cloudflare Developer Platform, including
-   * databases, object storage, AI inference, real-time communication and more.
-   * https://developers.cloudflare.com/workers/runtime-apis/bindings/
-   */
-
-  /**
-   * Environment Variables
-   * https://developers.cloudflare.com/workers/wrangler/configuration/#environment-variables
-   */
-  // "vars": { "MY_VARIABLE": "production_value" },
-  /**
-   * Note: Use secrets to store sensitive data.
-   * https://developers.cloudflare.com/workers/configuration/secrets/
-   */
-
-  /**
-   * Static Assets
-   * https://developers.cloudflare.com/workers/static-assets/binding/
-   */
-  // "assets": { "directory": "./public/", "binding": "ASSETS" },
-
-  /**
-   * Service Bindings (communicate between multiple Workers)
-   * https://developers.cloudflare.com/workers/wrangler/configuration/#service-bindings
-   */
-  // "services": [{ "binding": "MY_SERVICE", "service": "my-service" }]
 }

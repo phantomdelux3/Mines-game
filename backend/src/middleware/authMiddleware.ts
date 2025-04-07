@@ -1,19 +1,42 @@
-import { MiddlewareHandler } from "hono";
-import { verify } from "hono/jwt";
+import { MiddlewareHandler } from 'hono';
+import { verify } from 'hono/jwt';
 
+export const authMiddleware: MiddlewareHandler<{
+  Bindings: {
+    JWT_SECRET: string;
+  };
+  Variables: {
+    user: {
+      id: string;
+      email: string;
+      username?: string;
+    };
+  };
+}> = async (c, next) => {
+  const token = c.req.header('Authorization')?.split(' ')[1];
 
-export const authMiddleware: MiddlewareHandler = async (c, next) => {
-
-  const jwt_SECRET:string = c.env.JWT_SECRET;
-  const token = c.req.header("Authorization")?.replace("Bearer ", "");
-
-  if (!token) return c.json({ error: "Unauthorized" }, 401);
+  if (!token) {
+    return c.json({ error: 'Unauthorized - No token provided' }, 401);
+  }
 
   try {
-    const payload = await verify(token, jwt_SECRET);
-    c.set("user", payload); // Store user info in context
+    const payload = await verify(token, c.env.JWT_SECRET);
+
+    // Type guard for payload
+    if (typeof payload !== 'object' || payload === null || !('id' in payload)) {
+      return c.json({ error: 'Invalid token structure' }, 401);
+    }
+
+    // Set typed user context
+    c.set('user', {
+      id: String(payload.id),
+      email: String(payload.email),
+      username: payload.username ? String(payload.username) : undefined,
+    });
+
     await next();
   } catch (error) {
-    return c.json({ error: "Invalid token" }, 401);
+    console.error('JWT verification failed:', error);
+    return c.json({ error: 'Unauthorized - Invalid token' }, 401);
   }
 };

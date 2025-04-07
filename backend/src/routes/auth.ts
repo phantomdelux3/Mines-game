@@ -2,54 +2,126 @@ import { sign } from "hono/jwt";
 import bcrypt from "bcryptjs";
 import { authMiddleware } from "../middleware/authMiddleware";
 import { getPrisma } from "../db/db_conection";
-import app from "../app"
+import { Hono } from "hono";
 
+// Define environment type
+type Bindings = {
+  DATABASE_URL: string;
+  JWT_SECRET: string;
+};
 
+const app = new Hono<{ Bindings: Bindings }>();
+
+// Middleware to attach Prisma client
 app.use('*', async (c, next) => {
-  const prisma = getPrisma(c.env.DATABASE_URL);
+  const prisma = getPrisma(c.env);
   c.set('prisma', prisma);
   await next();
 });
 
 // SIGNUP Endpoint
 app.post("/signup", async (c) => {
-  const { username, email, password } = await c.req.json();
-  const prisma = c.get('prisma');
+  try {
+    const { username, email, password } = await c.req.json();
+    const prisma = c.get('prisma');
 
-  // Check if user already exists
-  const existingUser = await prisma.user.findUnique({ where: { email } });
-  if (existingUser) return c.json({ error: "Email already in use" }, 400);
+    // Validate input
+    if (!username || !email || !password) {
+      return c.json({ error: "All fields are required" }, 400);
+    }
 
-  // Hash password and save user
-  const hashedPassword = await bcrypt.hash(password, 10);
-  const user = await prisma.user.create({
-    data: { username, email, password: hashedPassword },
-  });
+    // Check if user exists
+    const existingUser = await prisma.user.findUnique({ where: { email } });
+    if (existingUser) {
+      return c.json({ error: "Email already in use" }, 409);
+    }
 
-  return c.json({ message: "User created successfully" });
+    // Hash password and create user
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const user = await prisma.user.create({
+      data: { 
+        username, 
+        email, 
+        password: hashedPassword 
+      },
+      select: {
+        id: true,
+        username: true,
+        email: true
+      }
+    });
+
+    return c.json({ 
+      message: "User created successfully",
+      user 
+    }, 201);
+
+  } catch (error) {
+    console.error("Signup error:", error);
+    return c.json({ error: "Internal server error" }, 500);
+  }
 });
 
-// 🔹 SIGNIN Endpoint
+// SIGNIN Endpoint
 app.post("/signin", async (c) => {
-  const { email, password } = await c.req.json();
-  const prisma = c.get('prisma');
+  try {
+    const { email, password } = await c.req.json();
+    const prisma = c.get('prisma');
 
-  const user = await prisma.user.findUnique({ where: { email } });
-  if (!user) return c.json({ error: "Invalid credentials" }, 401);
+    // Validate input
+    if (!email || !password) {
+      return c.json({ error: "Email and password are required" }, 400);
+    }
 
-  const isValid = await bcrypt.compare(password, user.password);
-  if (!isValid) return c.json({ error: "Invalid credentials" }, 401);
+    // Find user
+    const user = await prisma.user.findUnique({ 
+      where: { email },
+      select: {
+        id: true,
+        email: true,
+        username: true,
+        password: true
+      }
+    });
 
-  // Generate JWT token
-  const token = await sign({ id: user.id, email: user.email, username: user.username }, c.env.JWT_SECRET);
+    if (!user) {
+      return c.json({ error: "Invalid credentials" }, 401);
+    }
 
-  return c.json({ token });
+    // Verify password
+    const isValid = await bcrypt.compare(password, user.password);
+    if (!isValid) {
+      return c.json({ error: "Invalid credentials" }, 401);
+    }
+
+    // Generate JWT token (expires in 1 day)
+    const payload = { 
+      id: user.id, 
+      email: user.email,
+      username: user.username
+    };
+    const token = await sign(payload, c.env.JWT_SECRET);
+
+    // Return token and user info (without password)
+    const { password: _, ...userWithoutPassword } = user;
+    return c.json({ 
+      token,
+      user: userWithoutPassword
+    });
+
+  } catch (error) {
+    console.error("Signin error:", error);
+    return c.json({ error: "Internal server error" }, 500);
+  }
 });
 
-// 🔹 PROTECTED ROUTE (Example)
+// PROTECTED ROUTE
 app.get("/profile", authMiddleware, async (c) => {
-  const user = c.get("user");
-  return c.json({ message: "Welcome!", user });
+  const user = c.get('user');
+  return c.json({ 
+    message: "Welcome to your profile!",
+    user 
+  });
 });
 
 export default app;
